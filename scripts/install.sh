@@ -13,25 +13,22 @@ tools=""
 repo_path=""
 apply_current_repo=""
 uninstall=0
-claude_proxy_enabled=0
 
 agents_home="${TOKEN_SAVER_HOME:-$HOME/.agents}"
 state_file="${TOKEN_SAVER_STATE:-$agents_home/install_state}"
 git_template_dir="$agents_home/git-template"
 seeder_target="$agents_home/scripts/seed-project-instructions.sh"
 
-# Load target parsing, logging, preflight, and stack-tool helpers from the
-# repository so install behavior stays centralized.
+# Load target parsing, logging, and preflight helpers from the repository so
+# install behavior stays centralized.
 # shellcheck source=/dev/null
 . "$ROOT/scripts/lib/targets.sh"
 # shellcheck source=/dev/null
 . "$ROOT/scripts/lib/logging.sh"
 # shellcheck source=/dev/null
 . "$ROOT/scripts/lib/preflight.sh"
-# shellcheck source=/dev/null
-. "$ROOT/scripts/lib/stack-tools.sh"
 
-# Print command-line help for auto-detected stack installs and legacy
+# Print command-line help for auto-detected installs and legacy
 # instruction-file installs.
 usage() {
   cat <<'EOF'
@@ -39,13 +36,10 @@ Usage: bash scripts/install.sh [options]
 
 Options:
   --targets <list>         Optional comma-separated product targets:
-                           codex,claude,vscode. Auto-detected when omitted.
+                           codex,claude. Auto-detected when omitted.
   --tools <codex|claude|both>
-                           Legacy instruction-file tools to configure.
-                           Skips third-party stack setup.
+                           Instruction-file tools to configure.
   --repo <path>            Also seed and install managed hooks in this Git repo.
-  --enable-claude-proxy    Route Claude/Anthropic traffic through LeanCTX proxy.
-                           Requires ANTHROPIC_API_KEY.
   --non-interactive        Do not prompt.
   --dry-run                Print actions without changing files.
   --overwrite              Back up and replace existing managed target files.
@@ -425,7 +419,6 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --repo=*) repo_path="${1#*=}"; apply_current_repo=1 ;;
-    --enable-claude-proxy) claude_proxy_enabled=1 ;;
     --non-interactive) non_interactive=1 ;;
     --dry-run) dry_run=1 ;;
     --overwrite) overwrite=1 ;;
@@ -448,8 +441,7 @@ fi
 step "Initialize install log"
 log_kv "dry_run" "$dry_run"
 
-# Derive legacy tool selection from explicit or auto-detected targets. The
-# legacy --tools path remains instruction-file-only for compatibility.
+# Derive tool selection from explicit or auto-detected targets.
 if [ "$target_mode" = "1" ]; then
   tools="$(derive_tools_from_targets)"
 elif [ -z "$tools" ]; then
@@ -464,7 +456,6 @@ if [ "$target_mode" = "1" ]; then
   log_kv "selected_targets" "$targets"
   target_enabled codex && status_ok "Codex"
   target_enabled claude && status_ok "Claude"
-  target_enabled vscode && status_ok "VS Code"
 fi
 if [ -n "$tools" ]; then
   phase "Selected tools"
@@ -475,18 +466,13 @@ else
   status_ok "none"
   log_kv "selected_tools" "none"
 fi
-[ -n "${CONTEXT7_API_KEY:-}" ] && log_line "CONTEXT7_API_KEY=$CONTEXT7_API_KEY"
-
-[ -n "${ANTHROPIC_API_KEY:-}" ] && log_line "ANTHROPIC_API_KEY=[REDACTED:API key param]"
-
 # For target-mode installs, validate prerequisites before making changes, then
-# install instruction files before configuring the rest of the stack.
+# install instruction files.
 if [ "$target_mode" = "1" ]; then
   preflight_targets
   if [ -n "$tools" ]; then
     install_instruction_files
   fi
-  install_stack_tools
 fi
 
 # In interactive use from inside a repository, offer to seed and hook the current

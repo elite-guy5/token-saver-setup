@@ -29,8 +29,8 @@ assert_not_contains() {
   esac
 }
 
-# Verify non-interactive installs auto-detect installed stack targets when no
-# legacy --tools selector is provided.
+# Verify non-interactive installs auto-detect installed targets when no
+# --tools selector is provided.
 auto_detects_tools_in_non_interactive_mode() {
   local home="$tmp/home-auto-detect"
   local output
@@ -39,19 +39,19 @@ auto_detects_tools_in_non_interactive_mode() {
   chmod +x "$home/bin/codex"
 
   output="$(
-    HOME="$home" PATH="$home/bin:/usr/bin:/bin" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:/usr/bin:/bin" \
       CLAUDE_DESKTOP_APP_PATH="$home/missing/Claude.app" \
-      VSCODE_APP_PATH="$home/missing/Visual Studio Code.app" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive
   )"
 
   assert_contains "$output" "Selected targets"
   assert_contains "$output" "OK Codex"
-  assert_contains "$output" "Install LeanCTX"
+  assert_contains "$output" "Instruction files"
+  assert_contains "$output" "$home/.codex/AGENTS.md"
 }
 
-# Verify legacy codex-only dry-run output stays limited to instruction-file and
-# hook actions.
+# Verify codex-only dry-run output stays limited to instruction-file and hook
+# actions.
 dry_run_codex_only_has_no_third_party_actions() {
   local home="$tmp/home-codex"
   local output
@@ -70,6 +70,28 @@ dry_run_codex_only_has_no_third_party_actions() {
   assert_not_contains "$output" "package-manager install"
   assert_not_contains "$output" "external tool install"
   assert_not_contains "$output" "third-party setup"
+}
+
+# Verify target-mode installs never run third-party tool setup steps.
+target_mode_has_no_third_party_setup() {
+  local home="$tmp/home-no-stack"
+  local output
+  mkdir -p "$home/bin"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$home/bin/codex"
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$home/bin/claude"
+  chmod +x "$home/bin/codex" "$home/bin/claude"
+
+  output="$(
+    HOME="$home" PATH="$home/bin:/usr/bin:/bin" \
+      CLAUDE_DESKTOP_APP_PATH="$home/missing/Claude.app" \
+      bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets codex,claude
+  )"
+
+  assert_contains "$output" "Install complete"
+  assert_not_contains "$output" "Install LeanCTX"
+  assert_not_contains "$output" "Configure Context7"
+  assert_not_contains "$output" "Install Caveman"
+  assert_not_contains "$output" "Install Superpowers"
 }
 
 # Verify removed installer flags fail loudly instead of being accepted silently.
@@ -95,9 +117,8 @@ interactive_auto_detection_can_choose_codex() {
   chmod +x "$home/bin/codex"
 
   output="$(
-    printf 'n\n' | HOME="$home" PATH="$home/bin:/usr/bin:/bin" CONTEXT7_API_KEY=test-key \
+    printf 'n\n' | HOME="$home" PATH="$home/bin:/usr/bin:/bin" \
       CLAUDE_DESKTOP_APP_PATH="$home/missing/Claude.app" \
-      VSCODE_APP_PATH="$home/missing/Visual Studio Code.app" \
       bash "$ROOT/scripts/install.sh" --dry-run
   )"
 
@@ -113,6 +134,7 @@ interactive_auto_detection_can_choose_codex() {
 # Run the dry-run behavior scenarios.
 auto_detects_tools_in_non_interactive_mode
 dry_run_codex_only_has_no_third_party_actions
+target_mode_has_no_third_party_setup
 removed_flags_are_rejected
 interactive_auto_detection_can_choose_codex
 

@@ -107,9 +107,3 @@ print_log_summary() {
 log_kv() {
   log_line "$1=$2"
 }
-
-# Log a command before routing it through the installer's dry-run-aware runner.
-run_logged() {
-  log_line "command=$*"
-  run "$@"
-}

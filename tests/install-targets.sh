@@ -18,7 +18,7 @@ assert_contains() {
   esac
 }
 
-# Verify Codex product targets derive the legacy codex tool selector.
+# Verify Codex product targets derive the codex tool selector.
 target_mode_derives_codex_tools() {
   local home="$tmp/home-codex-targets"
   local output
@@ -27,7 +27,7 @@ target_mode_derives_codex_tools() {
   chmod +x "$home/bin/codex"
 
   output="$(
-    HOME="$home" PATH="$home/bin:$PATH" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:$PATH" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets codex
   )"
 
@@ -37,8 +37,8 @@ target_mode_derives_codex_tools() {
   assert_contains "$output" "OK codex"
 }
 
-# Verify mixed Codex and Claude product targets derive the legacy both tool
-# selector while showing only product-level selections.
+# Verify mixed Codex and Claude product targets derive the both tool selector
+# while showing only product-level selections.
 target_mode_derives_both_tools() {
   local home="$tmp/home-both-targets"
   local output
@@ -48,7 +48,7 @@ target_mode_derives_both_tools() {
   chmod +x "$home/bin/codex" "$home/bin/claude"
 
   output="$(
-    HOME="$home" PATH="$home/bin:$PATH" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:$PATH" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets codex,claude
   )"
 
@@ -70,7 +70,7 @@ legacy_surface_targets_normalize_to_products() {
   chmod +x "$home/bin/codex" "$home/bin/claude"
 
   output="$(
-    HOME="$home" PATH="$home/bin:$PATH" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:$PATH" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets codex-desktop,claude-vscode
   )"
 
@@ -97,34 +97,41 @@ invalid_target_is_rejected() {
 non_interactive_auto_detects_installed_targets() {
   local home="$tmp/home-auto-detect"
   local output
-  mkdir -p "$home/bin" "$home/Applications/Claude.app" "$home/Applications/Visual Studio Code.app"
+  mkdir -p "$home/bin" "$home/Applications/Claude.app"
   printf '#!/usr/bin/env bash\nexit 0\n' > "$home/bin/codex"
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$home/bin/node"
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$home/bin/npx"
-  chmod +x "$home/bin/codex" "$home/bin/node" "$home/bin/npx"
+  chmod +x "$home/bin/codex"
 
   output="$(
-    HOME="$home" PATH="$home/bin:/usr/bin:/bin" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:/usr/bin:/bin" \
       CLAUDE_DESKTOP_APP_PATH="$home/Applications/Claude.app" \
-      VSCODE_APP_PATH="$home/Applications/Visual Studio Code.app" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive
   )"
 
   assert_contains "$output" "Selected targets"
   assert_contains "$output" "OK Codex"
   assert_contains "$output" "OK Claude"
-  assert_contains "$output" "OK VS Code"
   assert_contains "$output" "OK both"
-  assert_contains "$output" "Dry run Configure Context7 for VS Code"
 }
 
-# Verify installs without detectable AI tools fail before stack setup.
+# Verify the removed VS Code target is rejected instead of silently accepted.
+vscode_target_is_rejected() {
+  local home="$tmp/home-vscode-target"
+  mkdir -p "$home"
+
+  if HOME="$home" bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets vscode >"$tmp/vscode.out" 2>"$tmp/vscode.err"; then
+    printf 'removed vscode target unexpectedly succeeded\n' >&2
+    exit 1
+  fi
+
+  assert_contains "$(cat "$tmp/vscode.err")" "invalid --targets value: vscode"
+}
+
+# Verify installs without detectable AI tools fail before any changes.
 no_detected_targets_fails() {
   local home="$tmp/home-no-targets"
   mkdir -p "$home"
 
   if HOME="$home" PATH="/usr/bin:/bin" CLAUDE_DESKTOP_APP_PATH="$home/missing/Claude.app" \
-    VSCODE_APP_PATH="$home/missing/Visual Studio Code.app" \
     bash "$ROOT/scripts/install.sh" --dry-run --non-interactive >"$tmp/no-targets.out" 2>"$tmp/no-targets.err"; then
     printf 'install without detected targets unexpectedly succeeded\n' >&2
     exit 1
@@ -139,6 +146,7 @@ target_mode_derives_both_tools
 legacy_surface_targets_normalize_to_products
 invalid_target_is_rejected
 non_interactive_auto_detects_installed_targets
+vscode_target_is_rejected
 no_detected_targets_fails
 
 # Verify interactive installs auto-detect targets instead of rendering a
@@ -151,9 +159,8 @@ interactive_auto_detects_without_selector() {
   chmod +x "$home/bin/codex"
 
   output="$(
-    printf 'n\n' | HOME="$home" PATH="$home/bin:/usr/bin:/bin" CONTEXT7_API_KEY=test-key \
+    printf 'n\n' | HOME="$home" PATH="$home/bin:/usr/bin:/bin" \
       CLAUDE_DESKTOP_APP_PATH="$home/missing/Claude.app" \
-      VSCODE_APP_PATH="$home/missing/Visual Studio Code.app" \
       bash "$ROOT/scripts/install.sh" --dry-run
   )"
 

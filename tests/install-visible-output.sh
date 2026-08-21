@@ -50,8 +50,9 @@ install_output_names_instruction_file_actions() {
   assert_contains "$output" "Configured git init.templateDir"
 }
 
-# Verify target-mode installs write instruction files before stack setup output.
-target_install_output_names_stack_actions() {
+# Verify target-mode installs run preflight before writing instruction files and
+# hooks.
+target_install_output_names_managed_actions() {
   local home="$tmp/home-target-output"
   local output
   mkdir -p "$home/bin"
@@ -59,23 +60,21 @@ target_install_output_names_stack_actions() {
   chmod +x "$home/bin/codex"
 
   output="$(
-    HOME="$home" PATH="$home/bin:$PATH" CONTEXT7_API_KEY=test-key \
+    HOME="$home" PATH="$home/bin:$PATH" \
       bash "$ROOT/scripts/install.sh" --dry-run --non-interactive --targets codex
   )"
 
   assert_contains "$output" "Preflight selected targets"
   assert_contains "$output" "Instruction files"
   assert_contains "$output" "Installed $home/.codex/AGENTS.md"
-  assert_contains "$output" "Install LeanCTX"
-  assert_contains "$output" "Configure Context7"
-  assert_contains "$output" "Install Caveman"
-  assert_contains "$output" "Install Superpowers"
+  assert_contains "$output" "Git hooks"
   assert_contains "$output" "Install complete"
-  assert_before "$output" "Instruction files" "Install LeanCTX"
+  assert_before "$output" "Preflight selected targets" "Instruction files"
+  assert_before "$output" "Instruction files" "Git hooks"
 }
 
 # Run visible-output scenarios.
 install_output_names_instruction_file_actions
-target_install_output_names_stack_actions
+target_install_output_names_managed_actions
 
 printf 'install-visible-output.sh: OK\n'

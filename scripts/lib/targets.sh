@@ -47,7 +47,6 @@ normalize_targets() {
     case "$item" in
       codex|codex-desktop|codex-vscode) target=codex ;;
       claude|claude-desktop|claude-code|claude-vscode|claude-code-vscode) target=claude ;;
-      vscode|vs-code|code|visual-studio-code) target=vscode ;;
       *) IFS="$old_ifs"; die "invalid --targets value: $item" ;;
     esac
     case ",$normalized," in
@@ -95,9 +94,8 @@ auto_detect_targets() {
   if claude_cli_available || claude_desktop_available; then
     detected="${detected:+$detected,}claude"
   fi
-  vscode_available && detected="${detected:+$detected,}vscode"
 
-  [ -n "$detected" ] || die "no supported AI tools were detected; install Codex, Claude, VS Code, or use --tools for instruction-file-only setup"
+  [ -n "$detected" ] || die "no supported AI tools were detected; install Codex, Claude, or use --tools for instruction-file-only setup"
   printf '%s\n' "$detected"
 }
 
@@ -123,38 +121,10 @@ claude_desktop_available() {
   [ -n "$(claude_desktop_app_path)" ]
 }
 
-claude_desktop_config_path() {
-  printf '%s\n' "${CLAUDE_DESKTOP_CONFIG_PATH:-$HOME/Library/Application Support/Claude/claude_desktop_config.json}"
-}
-
 claude_cli_available() {
   command -v claude >/dev/null 2>&1
 }
 
 codex_available() {
   command -v codex >/dev/null 2>&1
-}
-
-vscode_app_path() {
-  local path
-
-  if [ -n "${VSCODE_APP_PATH:-}" ]; then
-    [ -d "$VSCODE_APP_PATH" ] && printf '%s\n' "$VSCODE_APP_PATH"
-    return 0
-  fi
-
-  for path in "$HOME/Applications/Visual Studio Code.app" "/Applications/Visual Studio Code.app"; do
-    if [ -d "$path" ]; then
-      printf '%s\n' "$path"
-      return 0
-    fi
-  done
-}
-
-vscode_available() {
-  command -v code >/dev/null 2>&1 || [ -n "$(vscode_app_path)" ]
-}
-
-vscode_mcp_config_path() {
-  printf '%s\n' "${VSCODE_MCP_CONFIG_PATH:-$HOME/Library/Application Support/Code/User/mcp.json}"
 }

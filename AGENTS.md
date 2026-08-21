@@ -8,14 +8,14 @@
 
 AI Assistant Stack is a Bash-based installer and bootstrapper for configuring token-efficient AI coding environments across Codex and Claude Code.
 
-It installs and manages global instruction files, project templates, repository seeding hooks, and optional stack tooling for LeanCTX, Context7, Caveman, and Superpowers.
+It installs and manages global instruction files, project templates, and the repository seeding hooks that add project instruction files. It does not install or configure third-party stack tooling.
 
 ### Language / Framework
 
 - Primary language: Bash shell scripts.
 - Documentation and templates: Markdown.
 - Runtime environment: macOS-oriented POSIX shell environment with Git; `scripts/bootstrap.sh` also requires `curl` or `wget` for remote archive installs.
-- External tools configured or invoked: `lean-ctx`, `codex`, `claude`, `code`, `npx`, Git hooks, and Context7 MCP setup commands.
+- External tools detected: `codex` and `claude` for target selection, plus Git for template hooks and repository seeding.
 - No application framework, package manager manifest, compiled build, or database layer is configured in this repository.
 
 ### Key Entry Points
@@ -25,13 +25,12 @@ It installs and manages global instruction files, project templates, repository 
 - `scripts/install.sh`: main installer, uninstall flow, dry-run behavior, and hook installation logic.
 - `scripts/lib/targets.sh`: target selection and `--targets` to `--tools` derivation.
 - `scripts/lib/preflight.sh`: selected-target prerequisite checks.
-- `scripts/lib/stack-tools.sh`: LeanCTX, Context7, Caveman, and Superpowers setup.
 - `scripts/lib/logging.sh`: install logging and redaction helpers.
 - `scripts/seed-project-instructions.sh`: project instruction file seeding logic.
 - `templates/AGENTS.global.md`, `templates/AGENTS.project-template.md`, `templates/CLAUDE.global.md`, `templates/CLAUDE.project-template.md`: installed instruction templates.
-- `docs/codex-agent-stack-setup.md`, `docs/claude-agent-stack-setup.md`: stack setup references used by the README and installer behavior.
 - `tests/*.sh`: shell regression suite for installer behavior, targets, preflight, logging, hooks, bootstrap, and security-sensitive flows.
 - `.gitignore`, `.codexignore`, `.copilotignore`, `.claude/settings.json`: source-control, local convention, and secret-boundary configuration.
+- `docs/superpowers/`: dated design and plan records for past installer work; not current documentation.
 
 ---
 
@@ -75,21 +74,21 @@ verify with the best available command.
   - `tests/install-dry-run.sh` for non-interactive and dry-run behavior.
   - `tests/install-targets.sh` for target normalization and tool derivation.
   - `tests/install-preflight.sh` for fail-fast prerequisite checks.
-  - `tests/install-stack-tools.sh` for stack setup command paths.
   - `tests/security-regression.sh` for managed hook behavior, archive checksum handling, clone-free bootstrap, and piped-bootstrap execution.
 
 ### Coding Style & Architecture
 
 - Keep installer logic in Bash and match the existing `set -euo pipefail` style.
-- Keep shared helper logic in `scripts/lib/*.sh`; source helpers from `scripts/install.sh` rather than duplicating target, preflight, logging, or stack-tool logic.
+- Keep shared helper logic in `scripts/lib/*.sh`; source helpers from `scripts/install.sh` rather than duplicating target, preflight, or logging logic.
 - Keep `scripts/bootstrap.sh` limited to archive download, optional checksum verification, archive extraction, prompt TTY handling, and dispatch to `scripts/install.sh`.
 - Keep instruction-file seeding behavior in `scripts/seed-project-instructions.sh`; it should skip existing project instruction files unless overwrite is explicit.
-- Preserve dry-run behavior by routing filesystem and external commands through the existing `run` / `run_logged` helpers where practical.
-- Preserve secret redaction for Context7 credentials and do not print raw API keys in logs, dry-run output, tests, or docs.
+- Preserve dry-run behavior by routing filesystem and external commands through the existing `run` helper where practical.
+- Preserve secret redaction in `redact_text` and do not print raw API keys in logs, dry-run output, tests, or docs.
+- Keep installer scope limited to instruction files, project templates, the seeding script, and managed Git hooks. Do not reintroduce third-party tool installation, MCP registration, or client settings mutation.
 - Managed Git hook content should keep `TOKEN_SAVER_MANAGED_HOOK_BEGIN` / `TOKEN_SAVER_MANAGED_HOOK_END` markers so reruns and uninstall remain deterministic.
 - Prefer explicit shell assertions inside tests over adding a test framework or package-managed dependency.
 - Keep the repository package-free unless a requested change truly requires a dependency manager.
-- Treat docs and templates as part of the product surface; changes to `README.md`, `docs/*.md`, and `templates/*.md` should stay consistent with actual installer flags and behavior.
+- Treat docs and templates as part of the product surface; changes to `README.md` and `templates/*.md` should stay consistent with actual installer flags and behavior.
 
 ### 🤖 Model Routing & Token Enforcement
 

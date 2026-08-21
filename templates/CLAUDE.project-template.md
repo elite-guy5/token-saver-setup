@@ -118,6 +118,8 @@ verification rules.
 Use subagents only when persistent task state, parallel investigation,
 isolation, or review checkpoints materially help.
 
+For any multi-file or multi-stage task, use the fable-foreman skill.
+
 Do not spawn additional agents for docs-only edits, one-file fixes, simple
 config changes, command output checks, formatting, linting, or tasks where all
 steps must be performed sequentially.
