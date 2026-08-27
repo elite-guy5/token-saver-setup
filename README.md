@@ -9,6 +9,7 @@ AI Assistant Stack installs optimized AI instruction files and Git hooks that ke
 <p>
   <a href="#features">Features</a> •
   <a href="#installation">Installation</a> •
+  <a href="#recommended-tooling-setup">Recommended Setup</a> •
   <a href="#options">Options</a>
 </p>
 
@@ -98,6 +99,75 @@ install managed hooks in the current repository when it is run from inside one.
 - Project templates give each repository a local place for purpose, language,
   commands, tests, coding standards, project-specific rules, and context
   boundaries.
+
+## Recommended Tooling Setup
+
+The instruction files installed by this repository assume a supporting set of
+plugins and MCP servers. Set up both Claude and Codex: use Claude as the primary
+harness and Codex as the fallback when Claude tokens run out. Route automated,
+non-coding tasks to Codex to preserve Claude tokens.
+
+### Token Management
+
+Match the model to the task. Use smaller, cheaper models for simple work such as
+automations, and reserve the advanced models for larger, more complex
+development work. Use the ChatGPT chat interface for ideation and general
+questions, which costs no harness tokens.
+
+### Tool Overview
+
+| Tool | Purpose |
+|------|---------|
+| `codeburn` | Reports token usage and spend. |
+| `lean-ctx` | Reduces token spend on file reads, search, and shell output. |
+| `context7` | Serves current library and framework documentation. |
+| `caveman` | Compresses conversational text to reduce token usage. |
+| `superpowers` | Full software development methodology for coding agents. |
+| `fable-foreman` | Turns the selected Claude model into a team lead: it plans, spins up subagents, routes each task to the cheapest worker that clears the quality bar, and can use Codex when Codex is installed. |
+| Azure DevOps MCP | Lets the AI tool interact with Azure DevOps. |
+| Databricks MCP | Lets the AI tool interact with Databricks. |
+
+### Install Outside Both Harnesses
+
+Install these manually from a terminal rather than through the Claude or Codex
+interface:
+
+- lean-ctx: <https://github.com/yvgude/lean-ctx>
+- codeburn: <https://github.com/getagentseal/codeburn>
+
+### Claude
+
+Built-in plugins, through `Customize > Plugins > Browse`, then search:
+
+- context7
+- Engineering
+
+Built-in connectors, through `Customize > Connections > Browse`, then search:
+
+- Azure DevOps MCP
+
+Marketplace plugins, through `Customize > Plugins > Add > Add marketplace`, then
+paste the repository URL:
+
+- <https://github.com/obra/superpowers>
+- <https://github.com/JuliusBrussee/caveman>
+- <https://github.com/olsenbrands/fable-foreman>
+
+### Codex
+
+Built-in plugins, through `Plugins`, then search:
+
+- superpowers
+- context7
+
+Marketplace plugins, through `Plugins > Create dropdown > Add marketplace`, then
+paste the repository URL:
+
+- <https://github.com/JuliusBrussee/caveman>
+
+Configured outside the Codex interface:
+
+- Azure DevOps MCP: <https://github.com/microsoft/azure-devops-mcp>
 
 ## Explicit Instruction-File Install
 
