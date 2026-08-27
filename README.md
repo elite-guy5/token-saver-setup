@@ -6,6 +6,8 @@
 
 AI Assistant Stack installs optimized AI instruction files and Git hooks that keep every repository configured for token-efficient, consistent AI-assisted development.
 
+It also documents a <a href="#recommended-tooling-setup">recommended setup</a> for the plugins and MCP servers those instruction files expect, across both Claude and Codex.
+
 <p>
   <a href="#features">Features</a> •
   <a href="#installation">Installation</a> •
@@ -22,7 +24,9 @@ AI Assistant Stack installs optimized AI instruction files and Git hooks that ke
 
 The installer manages instruction files and Git hooks only. Any tooling the
 instruction files reference (LeanCTX, Context7, Caveman, Superpowers) is set up
-separately by hand; this repository neither installs nor configures it.
+separately by hand; this repository neither installs nor configures it. See
+[Recommended Tooling Setup](#recommended-tooling-setup) for that stack and where
+each piece is installed from.
 
 ## Benefits
 
